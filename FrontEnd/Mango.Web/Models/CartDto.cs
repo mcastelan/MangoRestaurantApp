@@ -9,5 +9,7 @@ namespace Mango.Web.Models
     {
         public CartHeaderDto CartHeader { get; set; }
         public IEnumerable<CartDetailsDto> CartDetails { get; set; }
+        public double OrderTotal { get; set; }
+
     }
 }

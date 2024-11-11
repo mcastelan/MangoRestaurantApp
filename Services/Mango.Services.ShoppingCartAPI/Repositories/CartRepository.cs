@@ -3,6 +3,9 @@ using Mango.Services.ShoppingCartAPI.DbContexts;
 using Mango.Services.ShoppingCartAPI.Models;
 using Mango.Services.ShoppingCartAPI.Models.Dtos;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Mango.Services.ShoppingCartAPI.Repositories
 {
@@ -143,6 +146,41 @@ namespace Mango.Services.ShoppingCartAPI.Repositories
                 return false;
             }
           
+        }
+
+        public async Task<bool> ApplyCoupon(string userId, string couponCode)
+        {
+            try
+            {
+                var cartFromDb = await _db.CartHeaders.FirstOrDefaultAsync(u => u.UserId == userId);
+                cartFromDb.CouponCode = couponCode;
+                _db.CartHeaders.Update(cartFromDb);
+                await _db.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+
+                return false;
+            }
+
+        }
+        public async Task<bool> RemoveCoupon(string userId)
+        {
+            try
+            {
+                var cartFromDb = await _db.CartHeaders.FirstOrDefaultAsync(u => u.UserId == userId);
+                cartFromDb.CouponCode = "";
+                _db.CartHeaders.Update(cartFromDb);
+                await _db.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+
+                return false;
+            }
+
         }
     }
 }

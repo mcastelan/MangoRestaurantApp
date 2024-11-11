@@ -1,6 +1,11 @@
-﻿using Mango.Services.ShoppingCartAPI.Models.Dtos;
+﻿using Mango.MessageBus;
+using Mango.Services.ShoppingCartAPI.Messages;
+using Mango.Services.ShoppingCartAPI.Models.Dtos;
 using Mango.Services.ShoppingCartAPI.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Mango.Services.ShoppingCartAPI.Controllers
 {
@@ -12,10 +17,12 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
     {
         protected ResponseDto _response;
         private ICartRepository _cartRepository;
+        private readonly IMessageBus _messageBus;
 
-        public CartAPIController(ICartRepository cartRepository)
+        public CartAPIController(ICartRepository cartRepository, IMessageBus messageBus)
         {
             _cartRepository = cartRepository;
+            this._messageBus = messageBus;
             this._response = new ResponseDto();
         }
 
@@ -84,6 +91,70 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                bool isSuccess = await _cartRepository.RemoveFromCart(cartId);
                
                 _response.IsSuccess = isSuccess;
+
+            }
+            catch (Exception ex)
+            {
+
+                _response.IsSuccess = false;
+                _response.ErrorMessages = new List<string>() { ex.ToString() };
+
+            }
+            return Ok(_response);
+        }
+
+        [HttpPost("ApplyCoupon")]
+        public async Task<IActionResult> ApplyCoupon([FromBody] CartDto cartDto)
+        {
+            try
+            {
+                bool isSuccess = await _cartRepository.ApplyCoupon(cartDto.CartHeader.UserId, cartDto.CartHeader.CouponCode);
+                _response.IsSuccess = isSuccess;
+
+            }
+            catch (Exception ex)
+            {
+
+                _response.IsSuccess = false;
+                _response.ErrorMessages = new List<string>() { ex.ToString() };
+
+            }
+            return Ok(_response);
+        }
+
+        [HttpPost("RemoveCoupon")]
+        public async Task<IActionResult> RemoveCoupon([FromBody] string userId)
+        {
+            try
+            {
+                bool isSuccess = await _cartRepository.RemoveCoupon(userId);
+                _response.IsSuccess = isSuccess;
+
+            }
+            catch (Exception ex)
+            {
+
+                _response.IsSuccess = false;
+                _response.ErrorMessages = new List<string>() { ex.ToString() };
+
+            }
+            return Ok(_response);
+        }
+
+        [HttpPost("Checkout")]
+        public async Task<IActionResult> Checkout(CheckoutHeaderDto checkoutHeader)
+        {
+            try
+            {
+               CartDto carDto = await _cartRepository.GetCartByUserId(checkoutHeader.UserId);
+                if (carDto == null)
+                {
+                    return BadRequest();
+                }
+                checkoutHeader.CartDetails = carDto.CartDetails;
+                _response.Result = checkoutHeader;
+
+                await _messageBus.PublishMessage(checkoutHeader, "checkoutmessagetopic");
 
             }
             catch (Exception ex)

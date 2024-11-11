@@ -1,4 +1,6 @@
-﻿namespace Mango.Services.ShoppingCartAPI.Models.Dtos
+﻿using System.Collections.Generic;
+
+namespace Mango.Services.ShoppingCartAPI.Models.Dtos
 {
     public class CartDto
     {

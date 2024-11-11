@@ -1,4 +1,6 @@
-﻿namespace Mango.Services.ShoppingCartAPI.Models
+﻿using System.Collections.Generic;
+
+namespace Mango.Services.ShoppingCartAPI.Models
 {
     public class Cart
     {

@@ -23,7 +23,7 @@ namespace Mango.Services.ShoppingCartAPI.Repositories
             try
             {
                 var cartHeaderFromDb = await _db.CartHeaders.FirstOrDefaultAsync(u => u.UserId == userId);
-                if (cartHeaderFromDb == null)
+                if (cartHeaderFromDb != null)
                 {
                     _db.CartDetails.RemoveRange(_db.CartDetails.Where(u => u.CartHeaderId == cartHeaderFromDb.CartHeaderId));
                     _db.CartHeaders.Remove(cartHeaderFromDb);
@@ -88,6 +88,8 @@ namespace Mango.Services.ShoppingCartAPI.Repositories
                         //if it does then update the count
                         cart.CartDetails.FirstOrDefault().Product = null;
                         cart.CartDetails.FirstOrDefault().Count += cartDetailsFromDb.Count;
+                        cart.CartDetails.FirstOrDefault().CartDetailsId += cartDetailsFromDb.CartDetailsId; 
+                        cart.CartDetails.FirstOrDefault().CartHeaderId += cartDetailsFromDb.CartHeaderId; 
                         _db.CartDetails.Update(cart.CartDetails.FirstOrDefault());
                         await _db.SaveChangesAsync();
                     }

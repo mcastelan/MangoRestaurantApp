@@ -12,6 +12,6 @@ namespace Mango.Services.ShoppingCartAPI.Models
 
         public String UserId { get; set; }
 
-        public string CouponCode { get; set; }
+        public string? CouponCode { get; set; }
     }
 }

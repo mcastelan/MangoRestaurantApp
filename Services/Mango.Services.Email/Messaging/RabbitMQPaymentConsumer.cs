@@ -1,5 +1,6 @@
 ﻿using Mango.Services.Email.Messages;
-using Mango.Services.Email.Repository;
+using Mango.Services.Email.Repositories;
+
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
@@ -20,11 +21,11 @@ namespace Mango.Services.Email.Messaging
         private const string ExchangeName = "DirectPaymentUpdate_Exchange";
         private const string PaymentOrderUpdateQueueName = "PaymentOrderUpdateQueueName";
 
-        private readonly OrderRepository _orderRepository;
+        private readonly EmailRepository _emailRepository;
         string queueName = "";
-        public RabbitMQPaymentConsumer(OrderRepository orderRepository)
+        public RabbitMQPaymentConsumer(EmailRepository emailRepository)
         {
-            _orderRepository = orderRepository;
+            _emailRepository = emailRepository;
             var factory = new ConnectionFactory
             {
                 HostName = "localhost",
@@ -34,9 +35,9 @@ namespace Mango.Services.Email.Messaging
 
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();
-            _channel.ExchangeDeclare(ExchangeName, ExchangeType.Direct);
-            _channel.QueueDeclare(PaymentOrderUpdateQueueName, false, false, false, null);
-            _channel.QueueBind(PaymentOrderUpdateQueueName, ExchangeName, "PaymentOrder");
+            _channel.ExchangeDeclare(ExchangeName, ExchangeType.Fanout);
+            queueName= _channel.QueueDeclare().QueueName;
+            _channel.QueueBind(queueName, ExchangeName, "");
         }
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -51,7 +52,7 @@ namespace Mango.Services.Email.Messaging
 
                 _channel.BasicAck(ea.DeliveryTag, false);
             };
-            _channel.BasicConsume(PaymentOrderUpdateQueueName, false, consumer);
+            _channel.BasicConsume(queueName, false, consumer);
 
             return Task.CompletedTask;
         }
@@ -60,8 +61,7 @@ namespace Mango.Services.Email.Messaging
         {
             try
             {
-                await _orderRepository.UpdateOrderPaymentStatus(updatePaymentResultMessage.OrderId,
-                    updatePaymentResultMessage.Status);
+                await _emailRepository.SendAndLogEmail(updatePaymentResultMessage);
             }
             catch (Exception e)
             {

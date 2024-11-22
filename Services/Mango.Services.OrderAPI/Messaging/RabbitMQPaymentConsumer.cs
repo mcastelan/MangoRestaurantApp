@@ -35,9 +35,10 @@ namespace Mango.Services.OrderAPI.Messaging
 
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();
-            _channel.ExchangeDeclare(ExchangeName, ExchangeType.Fanout);
-            queueName = _channel.QueueDeclare().QueueName;
-            _channel.QueueBind(queueName, ExchangeName, "");
+            _channel.ExchangeDeclare(ExchangeName, ExchangeType.Direct);
+            _channel.QueueDeclare(PaymentOrderUpdateQueueName, false, false, false, null);
+
+            _channel.QueueBind(PaymentOrderUpdateQueueName, ExchangeName, "PaymentOrder");
         }
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -52,7 +53,7 @@ namespace Mango.Services.OrderAPI.Messaging
 
                 _channel.BasicAck(ea.DeliveryTag, false);
             };
-            _channel.BasicConsume(queueName, false, consumer);
+            _channel.BasicConsume(PaymentOrderUpdateQueueName, false, consumer);
 
             return Task.CompletedTask;
         }

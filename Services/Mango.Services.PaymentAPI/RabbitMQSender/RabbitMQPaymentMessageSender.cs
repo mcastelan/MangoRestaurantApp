@@ -28,10 +28,17 @@ namespace Mango.Services.PaymentAPI.RabbitMQSender
             if (ConnectionExists())
             {
                 using var channel = _connection.CreateModel();
-               channel.ExchangeDeclare(exchange: ExchangeName, type: ExchangeType.Fanout,durable:false);
+               channel.ExchangeDeclare(exchange: ExchangeName, type: ExchangeType.Direct,durable:false);
+                channel.QueueDeclare(queue: PaymentOrderUpdateQueueName, durable: false, exclusive: false, autoDelete: false, arguments: null);
+                channel.QueueDeclare(queue: PaymentEmailUpdateQueueName, durable: false, exclusive: false, autoDelete: false, arguments: null);
+
+                channel.QueueBind(queue: PaymentOrderUpdateQueueName, exchange: ExchangeName, routingKey: "PaymentOrder");
+                channel.QueueBind(queue: PaymentEmailUpdateQueueName, exchange: ExchangeName, routingKey: "PaymentEmail");
+
                 var json = JsonConvert.SerializeObject(message);
                 var body = Encoding.UTF8.GetBytes(json);
-                channel.BasicPublish(exchange: ExchangeName, "", basicProperties: null, body: body);
+                channel.BasicPublish(exchange: ExchangeName, "PaymentEmail", basicProperties: null, body: body);
+                channel.BasicPublish(exchange: ExchangeName, "PaymentOrder", basicProperties: null, body: body);
             }
             
 

@@ -1,6 +1,6 @@
 ﻿
 using Azure.Messaging.ServiceBus;
-
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -12,9 +12,14 @@ namespace Mango.MessageBus
 {
     public class AzureServiceBusMessageBus: IMessageBus
     {
-        private string _connectionString =
-            "Endpoint=sb://mangorestmcastelan.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=gkhYSRgvDLbvRYThUpUaeZNaaWdtsVz4K+ASbFejIGQ=";
-           
+        private string _connectionString = "";
+     
+
+        public AzureServiceBusMessageBus(IConfiguration configuration)
+        {
+            _connectionString = configuration["ServiceBusConnectionString"]; // Use indexer instead of GetValue
+        }
+
         public async Task PublishMessage(BaseMessage message, string topicName)
         {
             //ISenderClient senderClient = new TopicClient(_connectionString, topicName);
